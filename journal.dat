@@ -1,0 +1,114 @@
+
+Wed 10/04/2023  1:55:46.96:
+   Beginning constructino on the new NT4 network. Stripped down, only std and other cross platform stuff. Won't be as pretty though as the console color stuff is windows specific.
+
+Wed 10/04/2023  1:56:53.18:
+   Setup a new project. Added the NT4.h file, starting on the c_Node.h atm
+
+Wed 10/04/2023  3:11:57.28:
+   Nodes can now accept dendritic and axonic connections. 
+
+Wed 10/04/2023  3:16:13.99:
+   Does_Lower_Connection_Exist added, checks out.
+
+Wed 10/04/2023  3:25:51.29:
+   Does_Upper_Tier_Connection_Exist added, tested, checks out.
+
+Wed 10/04/2023  5:06:34.21:
+   Added backpropagation, though will need to build the network and CAN before I can fully verify it works correctly.
+
+Wed 10/04/2023  5:10:27.05:
+   State binding added and working.
+
+Wed 10/04/2023  5:15:17.32:
+   Ok. build a simple 3x network and tested bp, seems to be working. Will verify with more complex networks when CAN and NNet are built
+
+Fri 10/06/2023  1:01:19.97:
+   Defined the basic Node_Network class, now to fill it out.
+
+Fri 10/06/2023  1:22:29.31:
+   Setup the fractal trees. One for nodes, the nodes are stored in a linked list with a fractal tree on top. A new node is created then added to the Nodes fractal tree. There are multiple state trees, a dynamic array, so that each construct can have its own input set. The nodes stored in the state tree are only references, nodes are only created when adding to the Nodes tree.
+
+Fri 10/06/2023  3:33:41.74:
+   Node network can now create nodes and create + bind state nodes.
+
+Fri 10/06/2023  3:34:22.12:
+   Took a few minutes, I am retarder and didn't create the fractal tree on index 0, kept trying to access the non-existent tree.
+
+Fri 10/06/2023  5:10:19.59:
+   Create_Connections is different than the old one, binds a bunch of nodes to p_To as dendrites, and binds all of them to p_To as axons.
+
+Fri 10/06/2023  5:10:37.39:
+   Need to make the distiction as well between normal ones and _F
+
+Fri 10/06/2023 21:21:29.47:
+   Forgot I had it ignore the first index in does_Lower_Connection_Exist so I've been chasing that down.
+
+Fri 10/06/2023 21:25:48.89:
+   Get_Upper_Tier_Node works, so does does_Upper_Tier_Connection_Exist at the c_Node_Network level.
+
+Fri 10/06/2023 22:30:25.75:
+   Get_State_Node is done. These all assume a valid construct index. Node operations should mostly be handled by the CAN and other internal systems so unless the user gets really hands on (aka gigachad) this won't be an issue.
+
+Fri 10/06/2023 23:45:07.17:
+   Starting on the Current Active Node Scaffold for Trace Encoding (CAN)
+
+Sun 10/08/2023 22:20:54.82:
+   Instead of using templates to allow interfaces of different types we will use interface classes for each datatype. This is to keep the code simpler and more accessible, so we can handle each datatype appropriately (though you can with templates but whatever), and because the states once inside the network won't be altered so we can typecase back and forth beneach the interface. This requires that any trace selection and predictuliction is done outside of the interface. If you are collapsing states that are of a string vs a float you would handle those differently than uint64_t most likely.
+
+Sun 10/08/2023 22:26:07.66:
+   Each CAN will only hold one inpute set. Each CAN is effectively a different contruct within the network.
+
+Sun 10/08/2023 23:14:03.65:
+   CAN now accepts input, making the c_CAN_Many_To_One first
+
+Sun 10/08/2023 23:14:09.81:
+   It also outputs
+
+Sun 10/08/2023 23:14:21.69:
+   Outputs the input array that it.
+
+Sun 10/08/2023 23:14:28.62:
+   *is
+
+Sun 10/08/2023 23:57:42.60:
+   reset_Scaffold and setup_CAN_Scaffold added for c_CAN_Many_To_Many
+
+Mon 10/09/2023  0:37:27.72:
+   fill_State() in c_CAN_Many_To_Many is working.
+
+Mon 10/09/2023  0:48:22.38:
+   added encode(uint64_t * p_Input, int p_Depth) which handles the set_Input, setup_CAN_Scaffold, fill_State, fill_Scaffold, and for now output_Input and output_Scaffold.
+
+Mon 10/09/2023 23:26:03.00:
+   Moved the NT4 library to a subdir in includes. 
+
+Mon 10/09/2023 23:29:00.01:
+   Added c_Granulator, c_Sim (for testing), and going to move the skeleton of the homeostasis module from the old project to the new one to begin rebuilding it upon the new network. This way I can iteratively build both the network functionality and the module at the same time. The visualizer will be where all trace selection happens, keeping it containted to there will allow for swapping out different methods for testing and development without needing to change the main program.
+
+Tue 10/10/2023 14:24:21.34:
+   Alrighty, slept on it and decided to make a polymorphic base class for the CAN structures. This way I can set it up so that you register an assembly within the NNet and this assembly is actually a CAN functioning as an interface. The granulator, visualizer, actuator interface, are going to be a separate module that sites outside the main NNet engine. They will form a 'systems control' interface for setups like the homeostasis module.
+
+Tue 10/10/2023 14:25:52.00:
+   May make higher networks like Chrono and MSC be internal to the NNet, you register and configure them, then call an update function which handles chrono shifting, treetop gathering, etc.
+
+Tue 10/10/2023 23:20:32.64:
+   The problem with open source work is that family doesn't understand and sees ((no_pay) == (not_real_work)) { freetime to bother with random bullshit; }
+
+Tue 10/10/2023 23:22:05.71:
+   Anyhow, making the CAN into a polymorphic base class so we can stick them into a single array and reference them by index to keep things congruent throughout the neural network structure. One important aspect is that the actual scaffold of pointers will be declared in the derived classes and handled internally, this is because of the wildly different scaffold structures that may be used.
+
+Wed 10/11/2023  0:37:49.52:
+   The biggest question is how to handle the scaffolds as they may vary wildly. If kept internal to the CAN then we have to do the charging and whatnot through the CAN. If we can allow access to the scaffold then a higher class will be able to access and charge, see, manipulate the trace.
+
+Wed 10/11/2023  1:50:16.65:
+   Making the get_Treetop() into get_Treetop(int p_Index = 0) so that when a CAN structure has more than one treetop (such as in cylindrical stiched base networks where output_len == input_Len) we can specify which one to get, default is 0 as most configurations will only have a single treetop.
+
+Fri 10/13/2023 22:28:22.62:
+   Query implemented, using NULL_CAN functionality
+
+Sat 10/14/2023  1:05:41.12:
+   CAN Scaffold output as Char working, super basic.
+
+Tue 10/17/2023 13:58:10.11:
+   Going to encapsulate the Granulation, Target Values, Deltatizer, in the c_IO class. This will allow use to give the user full control over each input/output individually. Once set up by the user the internals of the homeostasis module can then request delta values, goal values, granulated data, etc from each input accordingly.

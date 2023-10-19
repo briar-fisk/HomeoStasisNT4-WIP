@@ -1,0 +1,5 @@
+﻿  HomeoNetWIP.cpp
+C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\includes\NT4\c_Node.h(264,1): warning C4302: '<function-style-cast>': truncation from 'NT4::c_Node *' to 'char'
+C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\includes\NT4\c_CAN.h(299,1): warning C4302: '<function-style-cast>': truncation from 'NT4::c_Node *' to 'char'
+C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\includes\NT4\c_CAN.h(301,1): warning C4302: '<function-style-cast>': truncation from 'NT4::c_Node *' to 'char'
+  HomeoNetWIP.vcxproj -> C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\Debug\HomeoNetWIP.exe

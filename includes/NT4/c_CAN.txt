@@ -1,0 +1,187 @@
+//The Current Active Node Scaffold for Trace Encoding (CAN) is the scaffold we use to iteratively encode traces.
+//For example, a network with an I/O depth of 5 and a single tier w/ one 5 legged node may look like this:
+// Memory_Tier[1]: [0] //The top node, represents one permutation of the input tier. Multiple Memory tiers.
+// The memory tiers start at [1] since the State tier is technically Memory tier [0].
+// State_Tier (0): [0] [1] [2] [3] [4] //This is the tier with the states. 
+// Each [] represents a pointer to a node. We iterate from bottom to top, using get_State_Node,
+// and get_Upper_Tier_Node() to fill it out tier by tier.
+
+//Not using a polymorphic base class here, different CANs may have wildly different features.
+//Once enough are written then we can go back and write one if need be.
+
+//This functions to create a trace where all legs are connected to one node.
+//Load up the input, hit encode(), boom you single permutation of all legs bound to that node.
+//Most useful when each index in the input is a separate state space from the other indexes, sensors == good, language == shared states across words !good
+class c_CAN_Many_To_One
+{ 
+public:
+
+	//The reference to the node network to query for nodes.
+	c_Node_Network* NNet;
+
+	//This is the index in the c_Node_Network::State_Nodes[] array to request from.
+	int State_Nodes_Index;
+
+	//The inputs for the CAN, they are uint64_t internally, the data is not modified so as long as the correct interface is used then none will be lost.
+	uint64_t * Input;
+	int Input_Depth;
+
+	//Each CAN node is just a pointer to a node in the network.
+	//For this CAN the scaffold is 2 tiers, the bottom being the state tier, and then one node on tier[1] for the treetop/symbol node.
+	//So for this CAN we don't track the number of tiers, that is always 2, and the number of nodes is equal to the input depth for the state(quanta) tier, and 1 for the treetop.
+	c_Node** Scaffold[2];
+	int State_Depth; //We track this so that if the input is changed we can still properly delete the scaffold.
+
+	c_CAN_Many_To_One()
+	{
+		NNet = NULL;
+
+		Input = NULL;
+		Input_Depth = 0;
+
+		Scaffold[0] = NULL;
+		State_Depth = 0;
+		Scaffold[1] = new c_Node*[1];
+
+		State_Depth = 0;
+		State_Nodes_Index = 0;
+	}
+
+	~c_CAN_Many_To_One()
+	{
+		NNet = NULL;
+		reset_Scaffold();
+		reset_Input();
+	}
+
+	//Wipe the input array.
+	void reset_Input()
+	{
+		if (Input != NULL) 
+		{ 
+			delete[] Input; 
+			Input = NULL; 
+			Input_Depth = 0; 
+		}
+	}
+
+	//Resets the CAN to NULL, and deletes the state tier + treetop.
+	void reset_Scaffold()
+	{
+		if (Scaffold[0] != NULL)
+		{
+			//Make sure to NULL the scaffold first.
+			//DO NOT DELETE THEM, the addresses are for the node network, deleting them here will cause null pointer deletion in Node_Network.
+			for (int cou_Index = 0; cou_Index < State_Depth; cou_Index++)
+			{
+				Scaffold[0][cou_Index] = NULL;
+			}
+			delete[] Scaffold[0];
+			Scaffold[0] = NULL;
+		}
+		Scaffold[1][0] = NULL;
+	}
+
+	//Associate the CAN with a network from which to draw nodes.
+	void set_NNet(c_Node_Network* p_NNet)
+	{
+		NNet = p_NNet;
+	}
+
+	//Sets the index for the state_Node_Tree in the c_Node_Network::State_Nodes[]
+	void set_State_Nodes_Index(int p_Index)
+	{
+		State_Nodes_Index = p_Index;
+	}
+
+	//Sets the input to the given uint64_t array.
+	void set_Input(uint64_t* p_Input, int p_Input_Depth)
+	{
+		reset_Input();
+
+		Input_Depth = p_Input_Depth;
+		Input = new uint64_t[Input_Depth];
+		for (int cou_Index = 0; cou_Index < Input_Depth; cou_Index++)
+		{
+			Input[cou_Index] = p_Input[cou_Index];
+		}
+	}
+
+	//This sets up the actual CAN scaffold to use.
+	//It assumes the input array is filled out, the size is based upon that array.
+	void setup_CAN_Scaffold()
+	{
+		//Take it out back and put it down.
+		reset_Scaffold();
+
+		//Sizing her up!
+		State_Depth = Input_Depth;
+
+		//Setup the lowest tier of the scaffold so that every index in the input has a correlated state tier node position on the scaffold.
+		Scaffold[0] = new c_Node * [State_Depth];
+
+		//Initialize the scaffold.
+		for (int cou_Index = 0; cou_Index < State_Depth; cou_Index++)
+		{
+			Scaffold[0][cou_Index] = NULL;
+		}
+		Scaffold[1][0] = NULL;
+	}
+
+	//This fills the state tier by querying the node network.
+	void fill_State()
+	{
+		for (int cou_Index = 0; cou_Index < State_Depth; cou_Index++)
+		{
+			//Request the state node form the node network using get_State_Node so one is created if not found.
+			//We have to make sure we request the correct state tree.
+			Scaffold[0][cou_Index] = NNet->get_State_Node(0, Input[cou_Index]);
+		}
+	}
+
+	//Just one node lmao
+	void fill_Scaffold()
+	{
+		Scaffold[1][0] = NNet->get_Upper_Tier_Node(Scaffold[0], State_Depth); 
+	}
+
+	//Encodes a single trace, forcibly.
+	void encode(uint64_t * p_Input, int p_Depth)
+	{
+		set_Input(p_Input, p_Depth);
+
+		setup_CAN_Scaffold();
+
+		fill_State();
+
+		fill_Scaffold();
+
+		output_Input();
+		output_Scaffold();
+
+		std::cout << "\n\n\n";
+	}
+
+	//Outputs the scaffold.
+	void output_Scaffold()
+	{
+		std::cout << "\n  --==   CAN_Scaffold   ==--";
+		std::cout << "\n <- Tier[0] ->";
+		for (int cou_Index = 0; cou_Index < State_Depth; cou_Index++)
+		{
+			std::cout << "\n   [" << cou_Index << "] " <<  Scaffold[0][cou_Index];
+		}
+		std::cout << "\n <- Tier[1] ->";
+		std::cout << "\n   [0] " << Scaffold[1][0];
+	}
+
+	//Outputs the input array.
+	void output_Input()
+	{
+		std::cout << "\n  --==   CAN_Input   ==--";
+		for (int cou_Index = 0; cou_Index < Input_Depth; cou_Index++)
+		{
+			std::cout << "\n [" << cou_Index << "] " << Input[cou_Index];
+		}
+	}
+};
