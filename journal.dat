@@ -111,4 +111,52 @@ Sat 10/14/2023  1:05:41.12:
    CAN Scaffold output as Char working, super basic.
 
 Tue 10/17/2023 13:58:10.11:
-   Going to encapsulate the Granulation, Target Values, Deltatizer, in the c_IO class. This will allow use to give the user full control over each input/output individually. Once set up by the user the internals of the homeostasis module can then request delta values, goal values, granulated data, etc from each input accordingly.
+   Now that the neural network can encode symbols I'm going to build the homeostasis module to the point of prediction, then switch back to the NNet, then keep bringing both of those ahead in conjunction. Going to encapsulate the Granulation, Target Values, Deltatizer, in the c_IO class. This will allow use to give the user full control over each input/output individually. Once set up by the user the internals of the homeostasis module can then request delta values, goal values, granulated data, etc from each input accordingly.
+
+Fri 10/20/2023  2:35:18.32:
+   Separating c_Input_Goal, c_Input_Actuator, c_Output_Actuator to each be their own.
+
+Fri 10/20/2023  2:35:44.21:
+   The input uses double for now, may change to templates in the future.
+
+Fri 10/20/2023 17:01:27.83:
+   The old granulator class is getting an overhaul.
+
+Fri 10/20/2023 17:02:28.66:
+   It will now be setup so that you give it the smallest ranges first and it iteratively searches from small to large, largest being the biggest deviation from the smallest. The first index [0] is always the goal, if within this range the granulator returns 0.
+
+Fri 10/20/2023 17:17:58.18:
+   Granulator is functioning as intended. Moving on to the c_Input_Goal class for the homeostasis interface.
+
+Fri 10/20/2023 23:18:38.73:
+   Added calculate_Delta to the c_Input_Goal. 
+
+Fri 10/20/2023 23:19:35.89:
+   And the Granulator. Forgot to mention I added set_Depth(int p_Depth) and the granulator before the delta caculator.
+
+Fri 10/20/2023 23:23:47.64:
+   Added shift_Data and wipe_Data to the c_Input_Goal
+
+Sat 10/21/2023  1:41:48.46:
+   c_Input_Goal is working.
+
+Sun 10/22/2023  1:11:55.72:
+   Alrighty, instead of 'goal' and 'feedback' we now use 'afferent' and 'efferent' for biomimicry in the Gaia module branding and design.
+
+Sun 10/22/2023  1:24:35.21:
+   Hehehe, doing the registration for the IO sets I accidentally deleted the tmp var and then set the main array to NULL instead of the tmp one.
+
+Sun 10/22/2023 20:54:40.17:
+   Have the output_AE, registration for both A and E, the linking of the manipulations to the surface of the module. Testing setting, shifting, etc of the data.
+
+Sun 10/22/2023 22:23:47.11:
+   Alright, so far seems good. Now to hook the NNet up to it.
+
+Sun 10/22/2023 22:27:45.38:
+   Moved the IO to the c_IO_Interface.h
+
+Sun 10/22/2023 22:30:26.83:
+   Renamed c_IO_Interface to c_AE_Interface
+
+Thu 10/26/2023  1:34:54.23:
+   output_Gathered() added. Gets the current input set as 2 arrays, Afferent is 2d, efferent 1d

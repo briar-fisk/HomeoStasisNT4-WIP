@@ -2,4 +2,8 @@
 C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\includes\NT4\c_Node.h(264,1): warning C4302: '<function-style-cast>': truncation from 'NT4::c_Node *' to 'char'
 C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\includes\NT4\c_CAN.h(299,1): warning C4302: '<function-style-cast>': truncation from 'NT4::c_Node *' to 'char'
 C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\includes\NT4\c_CAN.h(301,1): warning C4302: '<function-style-cast>': truncation from 'NT4::c_Node *' to 'char'
+C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\HomeoNetWIP.cpp(206,82): warning C4244: '=': conversion from 'double' to 'uint64_t', possible loss of data
+C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\HomeoNetWIP.cpp(207,88): warning C4244: '=': conversion from 'double' to 'uint64_t', possible loss of data
+C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\HomeoNetWIP.cpp(208,83): warning C4244: '=': conversion from 'double' to 'uint64_t', possible loss of data
+C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\HomeoNetWIP.cpp(212,79): warning C4244: '=': conversion from 'double' to 'uint64_t', possible loss of data
   HomeoNetWIP.vcxproj -> C:\Present\HomeostasisModule\HomeoNetWIP\HomeoNetWIP\Debug\HomeoNetWIP.exe
