@@ -2,6 +2,7 @@
 //The NeuroTox 4 library.
 namespace NT4
 {
+	 
 
 	#include "NT4/c_Node.h"
 
@@ -11,7 +12,10 @@ namespace NT4
 
 	//Both the Charging_Array & Backpropagation_Station have to have members to handle each type of CAN structure.
 	#include "NT4/c_CAN.h"
-	//#include "NT4/c_Charging_Array.h"
+	#include "NT4/c_CAN_Many_To_One.h"
+	#include "NT4/c_CAN_Multi_Sensory_Construct.h"
+	
+	#include "NT4/c_Charging_Array.h" 
 	//#include "NT4/c_Backpropigation_Station
 
 	#include "NT4/c_Construct.h"

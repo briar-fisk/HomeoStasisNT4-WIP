@@ -3,51 +3,57 @@ class c_Node
 {
 public:
 
-	//The Node ID, used because the raw address may change upon saving/loading and external hooks need a solid grasp.
-	uint64_t NID;
+    //The Node ID, used because the raw address may change upon saving/loading and external hooks need a solid grasp.
+    uint64_t NID;
 
-	//The next node in the network.
-	c_Node* Next;
+    //The next node in the network.
+    c_Node* Next;
 
-	//Axons and the counters. Axons_F are the ones connected to the first leg, used in finding UTN
-	c_Node** Axons_F;
-	c_Node** Axons;
-	int Axon_Count_F;
-	int Axon_Count;
+    //Axons and the counters. Axons[0][] are the ones connected to the first leg, used in finding UTN
+    //Axons are organized by the dendritic index they are connected to, if they connect to leg [0] then they are an axon on hillock [0].
+    c_Node*** Axons;
+    int* Axon_Count;
+    int Axon_Hillock_Count;
 
-	//Dendrites, lower connections, leg order is of highest importance.
-	c_Node** Dendrites;
-	int Dendrite_Count;
+    //Dendrites, lower connections, leg order is of highest importance.
+    c_Node** Dendrites;
+    int Dendrite_Count;
 
-	//The reinforcement counter.
+    //The reinforcement counter.
     //A filter function will be built into the c_Neural_Network that applies:
     // exponential growth to reduce new trace impact, one offs and flukes get filtered
     // Sigmoid curve for the top end to prevent extreme bias in highly reinforced nodes.
-	float RC;
+    double RC;
 
-	//The current charge of the node.
-	float Current_Charge;
+    //The current charge of the node.
+    double Current_Charge;
 
-	//The quanta bound to the node.
+    //The quanta bound to the node.
     uint64_t State;
 
-	c_Node()
-	{
+    //This is the reference to the current leg firing order. Points to an array.
+    bool** Leg_Firing_Order;
+
+    //This tracks the node type.
+    //(0: NULL), (1: State), (2: Branch), (3: Treetop), (4: State Treetop)
+    uint8_t Type;
+
+    c_Node()
+    {
         NID = 0;
 
         //The next node.
         Next = NULL;
 
         //Axons and their counters.
-        Axons_F = NULL;
-        Axon_Count_F = 0;
 
         Axons = NULL;
         Axon_Count = 0;
+        Axon_Hillock_Count = 0;
 
         //Dendrites.
         Dendrites = NULL;
-		Dendrite_Count = 0;
+        Dendrite_Count = 0;
 
         //Reinforcement Counters.
         RC = 1.0;
@@ -55,65 +61,103 @@ public:
         //The nodes state.
         State = 0;
 
-		//No charge atm.
+        //No charge atm.
         Current_Charge = 0.0;
-	}
 
+        //No firing order yet.
+        Leg_Firing_Order = NULL;
 
-    //Adds an axon on the first leg.
-    void add_Axon_F(c_Node* p_Axon)
-    {
-        c_Node** tmp_Axons;
-        tmp_Axons = new c_Node * [Axon_Count_F];
-        for (int cou_A = 0; cou_A < Axon_Count_F; cou_A++)
-        {
-            tmp_Axons[cou_A] = Axons_F[cou_A];
-            Axons_F[cou_A] = NULL;
-        }
-
-        delete[] Axons_F;
-        Axons_F = NULL;
-
-        Axons_F = new c_Node * [Axon_Count_F + 1];
-
-        for (int cou_A = 0; cou_A < Axon_Count_F; cou_A++)
-        {
-            Axons_F[cou_A] = tmp_Axons[cou_A];
-            tmp_Axons[cou_A] = NULL;
-        }
-        delete[] tmp_Axons;
-        tmp_Axons = NULL;
-
-        Axons_F[Axon_Count_F] = p_Axon;
-        Axon_Count_F++;
+        //The type is 0 to start with.
+        Type = 0;
     }
 
-    //Adds an axon to the axon list.
-    void add_Axon(c_Node* p_Axon)
+    //Gets the address of the firing leg order array for the charging array to use.
+    void set_Leg_Firing_Order(bool** p_Leg_Firing_Order)
     {
-        c_Node** tmp_Axons;
-        tmp_Axons = new c_Node * [Axon_Count];
-        for (int cou_A = 0; cou_A < Axon_Count; cou_A++)
+        Leg_Firing_Order = p_Leg_Firing_Order;
+    }
+
+    //(0: State), (1: Branch), (2: Treetop), (3: State/Treetop)
+    void set_Type(uint8_t p_Type)
+    {
+        Type = p_Type;
+    }
+
+    void resize_Axon_Hillocks(int p_Count)
+    {
+        c_Node*** tmp_Axons;
+        int* tmp_Axon_Count;
+        tmp_Axons = new c_Node ** [Axon_Hillock_Count];
+        tmp_Axon_Count = new int [Axon_Hillock_Count];
+
+        for (int cou_A = 0; cou_A < Axon_Hillock_Count; cou_A++)
         {
             tmp_Axons[cou_A] = Axons[cou_A];
             Axons[cou_A] = NULL;
+
+            tmp_Axon_Count[cou_A] = Axon_Count[cou_A];
         }
 
         delete[] Axons;
         Axons = NULL;
 
-        Axons = new c_Node * [Axon_Count + 1];
+        delete[] Axon_Count;
+        Axon_Count = NULL;
 
-        for (int cou_A = 0; cou_A < Axon_Count; cou_A++)
+        Axons = new c_Node ** [p_Count];
+        Axon_Count = new int [p_Count];
+
+        for (int cou_A = 0; cou_A < Axon_Hillock_Count; cou_A++)
         {
             Axons[cou_A] = tmp_Axons[cou_A];
+            tmp_Axons[cou_A] = NULL;
+
+            Axon_Count[cou_A] = tmp_Axon_Count[cou_A];
+        }
+
+        delete[] tmp_Axons;
+        tmp_Axons = NULL;
+
+        delete[] tmp_Axon_Count;
+        tmp_Axon_Count = NULL;
+
+        for (int cou_A = Axon_Hillock_Count; cou_A < p_Count; cou_A++)
+        {
+            Axons[cou_A] = NULL;
+            Axon_Count[cou_A] = 0;
+        }
+
+        Axon_Hillock_Count = p_Count;
+    }
+
+    //Adds an axon to the axon list at the given index, if the index doesn't exist then exist it with resize_Axon_Hillocks()
+    void add_Axon_Index(c_Node* p_Axon, int p_Index)
+    {
+        if (p_Index >= Axon_Hillock_Count) { resize_Axon_Hillocks(p_Index + 1); }
+
+        c_Node** tmp_Axons;
+        tmp_Axons = new c_Node * [Axon_Count[p_Index]];
+        for (int cou_A = 0; cou_A < Axon_Count[p_Index]; cou_A++)
+        {
+            tmp_Axons[cou_A] = Axons[p_Index][cou_A];
+            Axons[p_Index][cou_A] = NULL;
+        }
+
+        delete[] Axons[p_Index];
+        Axons[p_Index] = NULL;
+
+        Axons[p_Index] = new c_Node * [Axon_Count[p_Index] + 1];
+
+        for (int cou_A = 0; cou_A < Axon_Count[p_Index]; cou_A++)
+        {
+            Axons[p_Index][cou_A] = tmp_Axons[cou_A];
             tmp_Axons[cou_A] = NULL;
         }
         delete[] tmp_Axons;
         tmp_Axons = NULL;
 
-        Axons[Axon_Count] = p_Axon;
-        Axon_Count++;
+        Axons[p_Index][Axon_Count[p_Index]] = p_Axon;
+        Axon_Count[p_Index]++;
     }
 
     //Sets the dendrites of the node.
@@ -134,16 +178,19 @@ public:
     //This is always called from the first leg, that is why we separate _F from normal.
     c_Node* does_Upper_Tier_Connection_Exist(c_Node** p_Nodes, int p_Count)
     {
-        std::cout << "\n Axon_Count_F: " << Axon_Count_F;
-
-        //Check the axons on the right side for the 
-        for (int cou_A = 0; cou_A < Axon_Count_F; cou_A++)
+        if (Axon_Hillock_Count > 0)
         {
-            std::cout << "\n   Axon_F[" << cou_A << "] " << Axons_F[cou_A];
-            if (Axons_F[cou_A]->does_Lower_Connection_Exist(p_Nodes, p_Count))
+            //std::cout << "\n Axon_Count[0]: " << Axon_Count[0];
+
+            //Check the axons on the right side for the 
+            for (int cou_A = 0; cou_A < Axon_Count[0]; cou_A++)
             {
-                std::cout << "\n >>>>>>>>>>>>>Foundit: " << Axons_F[cou_A];
-                return Axons_F[cou_A];
+                //std::cout << "\n   Axon_F[" << cou_A << "] " << Axons[0][cou_A];
+                if (Axons[0][cou_A]->does_Lower_Connection_Exist(p_Nodes, p_Count))
+                {
+                    //std::cout << "\n >>>>>>>>>>>>>Foundit: " << Axons[0][cou_A];
+                    return Axons[0][cou_A];
+                }
             }
         }
         return NULL;
@@ -171,23 +218,49 @@ public:
     //Initiates a backpropagation that 
     void bp_O()
     {
-        std::cout << "<=- ";
+        std::cout << "<=- " << NID << " ";
         //If a left leg exists then initiate a backpropagation along it, then along the right side.
         if (Dendrite_Count != 0)
         {
-            if (Dendrites[0] != NULL) { Dendrites[0]->bp_F(); }
+            std::cout << "*";
+            if (Dendrites[0] != NULL)
+            {
+                //If not a treetop then call _F
+                if ((Dendrites[0]->Type != 2) && (Dendrites[0]->Type != 3))
+                {
+                    Dendrites[0]->bp_F();
+                }
+
+                //If the dendritically connected node is a treetop then call the _O on it.
+                if ((Dendrites[0]->Type == 2) || (Dendrites[0]->Type == 3))
+                {
+                    Dendrites[0]->bp_O();
+                }
+            }
+
             for (int cou_D = 1; cou_D < Dendrite_Count; cou_D++)
             {
                 if (Dendrites[cou_D] != NULL)
                 {
-                    Dendrites[cou_D]->bp_M();
+                    //If not a treetop then call bp_M()
+                    if ((Dendrites[cou_D]->Type != 2) && (Dendrites[cou_D]->Type != 3))
+                    {
+                        Dendrites[cou_D]->bp_M();
+                        continue;
+                    }
+
+                    //If the dendritically connected node is a treetop then call the bp_O on it.
+                    if ((Dendrites[cou_D]->Type == 2) || (Dendrites[cou_D]->Type == 3))
+                    {
+                        Dendrites[cou_D]->bp_O();
+                    }
                 }
             }
         }
         else
         {
             //Output the state
-            std::cout << " <" << State << "> ";
+            std::cout << " <" << NID << " :: " << State << "> ";
         }
         std::cout << " -=>";
     }
@@ -210,7 +283,7 @@ public:
         else
         {
             //Output the state
-            std::cout << " <" << State << "> ";
+            std::cout << " <" << NID << " :: " << State << "> ";
         }
     }
 
@@ -231,7 +304,7 @@ public:
         else
         {
             //Output the state
-            std::cout << " <" << State << "> ";
+            std::cout << " <" << NID << " :: " << State << "> ";
         }
     }
 
@@ -246,16 +319,13 @@ public:
             std::cout << "\n --[" << cou_D << "] " << Dendrites[cou_D];
         }
 
-        std::cout << "\n Axons_F: ";
-        for (int cou_A = 0; cou_A < Axon_Count_F; cou_A++)
+        for (int cou_H = 0; cou_H < Axon_Hillock_Count; cou_H++)
         {
-            std::cout << "\n --[" << cou_A << "] " << Axons_F[cou_A];
-        }
-
-        std::cout << "\n Axons: ";
-        for (int cou_A = 0; cou_A < Axon_Count; cou_A++)
-        {
-            std::cout << "\n --[" << cou_A << "] " << Axons[cou_A];
+            std::cout << "\n Axons[" << cou_H << ": ";
+            for (int cou_A = 0; cou_A < Axon_Count[cou_H]; cou_A++)
+            {
+                std::cout << "\n --[" << cou_A << "] " << Axons[cou_H][cou_A];
+            }
         }
     }
 

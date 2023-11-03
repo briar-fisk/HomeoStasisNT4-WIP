@@ -30,12 +30,13 @@ public:
 	//c_Node** Scaffold[2];
 	//int State_Depth; //We track this so that if the input is changed we can still properly delete the scaffold.
 
-
+	//This is the reference for leg connection order firing control. It is assumed that the number of axon hillocks won't exceed this count for any node called.
+	bool* Leg_Firing_Order;
+	
+	//The leg count is used by the Leg_Firing_Order control members. 
+	int Leg_Count;
 
 	//==--   Member functions   --==//
-
-	//Associate the CAN with a network from which to draw nodes.
-	virtual void set_NNet(c_Node_Network* p_NNet)=0;
 
 	//This encodes the p_Input data, if the nodes aren't found they are created, used for training.
 	virtual void encode(uint64_t* p_Input, int p_Depth)=0;
@@ -48,6 +49,69 @@ public:
 	//This returns the treetop node at a given index, for most structures this will be a single node, but for those like stiched-base networks with a treetop node count equal to the input node count then you can access them by index.
 	virtual c_Node* get_Treetop(int p_Index = 0)=0;
 
+	//Wipe the input array.
+	void reset_Input()
+	{
+		//Reset it if need be.
+		if (Input != NULL)
+		{
+			delete[] Input;
+			Input = NULL;
+			Input_Depth = 0;
+		}
+	}
+
+	//Associate the CAN with a network from which to draw nodes.
+	void set_NNet(c_Node_Network* p_NNet)
+	{
+		NNet = p_NNet;
+	}
+
+	//Set the number of legs to fire and expand the array.
+	void set_Leg_Count(int p_Count)
+	{
+		if (Leg_Firing_Order != NULL) { delete[] Leg_Firing_Order; Leg_Firing_Order = NULL; }
+
+		Leg_Firing_Order = new bool[p_Count];
+
+		for (int cou_Index = 0; cou_Index < p_Count; cou_Index++)
+		{
+			Leg_Firing_Order[cou_Index] = true;
+		}
+
+		Leg_Count = p_Count;
+	}
+
+	//It is assumed the number of legs is known as by calling this you are actively setting them to what you want.
+	void set_Leg_Firing_Order(bool* Firing_Order)
+	{
+		for (int cou_Leg = 0; cou_Leg < Leg_Count; cou_Leg++)
+		{
+			Leg_Firing_Order[cou_Leg] = Firing_Order[cou_Leg];
+		}
+	}
+
+	//Sets the index for the state_Node_Tree in the c_Node_Network::State_Nodes[]
+	void set_State_Nodes_Index(int p_Index)
+	{
+		State_Nodes_Index = p_Index;
+	}
+
+	//Sets the input to the given uint64_t array.
+	//The input array is 1D, but for more complex constructs dimensional index slicing is used.
+	void set_Input(uint64_t* p_Input, int p_Input_Depth)
+	{
+		reset_Input();
+
+		//Initialize the wiped input array and copy the data to it from the arguments.
+		Input_Depth = p_Input_Depth;
+		Input = new uint64_t[Input_Depth];
+		for (int cou_Index = 0; cou_Index < Input_Depth; cou_Index++)
+		{
+			Input[cou_Index] = p_Input[cou_Index];
+		}
+	}
+
 	//==--   Output Functions   --==//
 
 	//Outputs the scaffold as addresses.
@@ -58,7 +122,6 @@ public:
 
 	//Each address is typecast to a char to give a pseudo-unique look to each node. For monke brain.
 	virtual void output_Scaffold_Char()=0;
-
 };
 
 //This functions to create a trace where all legs are connected to one node.
@@ -87,6 +150,8 @@ public:
 
 		State_Depth = 0;
 		State_Nodes_Index = 0;
+
+		Leg_Firing_Order = NULL;
 	}
 
 	~c_CAN_Many_To_One()
@@ -94,18 +159,6 @@ public:
 		NNet = NULL;
 		reset_Scaffold();
 		reset_Input();
-	}
-
-	//Wipe the input array.
-	void reset_Input()
-	{
-		//Reset it if need be.
-		if (Input != NULL) 
-		{ 
-			delete[] Input; 
-			Input = NULL; 
-			Input_Depth = 0; 
-		}
 	}
 
 	//Resets the CAN to NULL, and deletes the state tier + treetop.
@@ -123,26 +176,6 @@ public:
 			Scaffold[0] = NULL;
 		}
 		Scaffold[1][0] = NULL;
-	}
-
-	//Sets the index for the state_Node_Tree in the c_Node_Network::State_Nodes[]
-	void set_State_Nodes_Index(int p_Index)
-	{
-		State_Nodes_Index = p_Index;
-	}
-
-	//Sets the input to the given uint64_t array.
-	void set_Input(uint64_t* p_Input, int p_Input_Depth)
-	{
-		reset_Input();
-
-		//Initialize the wiped input array and copy the data to it from the arguments.
-		Input_Depth = p_Input_Depth;
-		Input = new uint64_t[Input_Depth];
-		for (int cou_Index = 0; cou_Index < Input_Depth; cou_Index++)
-		{
-			Input[cou_Index] = p_Input[cou_Index];
-		}
 	}
 
 	//This sets up the actual CAN scaffold to use.
@@ -177,6 +210,12 @@ public:
 				//Request the state node form the node network using get_State_Node so one is created if not found.
 				//We have to make sure we request the correct state tree.
 				Scaffold[0][cou_Index] = NNet->get_State_Node(0, Input[cou_Index]);
+
+				//If the node is also a treetop then set it to state/treetop.
+				if ((Scaffold[0][cou_Index]->Type == 3) || (Scaffold[0][cou_Index]->Type == 4))
+				{
+					Scaffold[0][cou_Index]->Type = 4;
+				}
 			}
 		}
 		if (p_How == "Query")
@@ -198,18 +237,26 @@ public:
 		{
 			//We request a node that links the entire state tier together.
 			Scaffold[1][0] = NNet->get_Upper_Tier_Node(Scaffold[0], State_Depth);
+
+			Scaffold[1][0]->Type = 3;
 		}
 		if (p_How == "Query")
 		{
 			//We request a node that links the entire state tier together, but do not create them.
 			Scaffold[1][0] = NNet->does_Upper_Tier_Connection_Exist(Scaffold[0], State_Depth);
 		}
-	}
 
-	//Associate the CAN with a network from which to draw nodes.
-	void set_NNet(c_Node_Network* p_NNet)
-	{
-		NNet = p_NNet;
+		for (int cou_Index = 0; cou_Index < State_Depth; cou_Index++)
+		{
+			if (Scaffold[0][cou_Index] != NULL)
+			{
+				(Scaffold[0][cou_Index])->set_Leg_Firing_Order(&Leg_Firing_Order);
+			}
+		}
+		if (Scaffold[1][0] != NULL)
+		{
+			(Scaffold[1][0])->set_Leg_Firing_Order(&Leg_Firing_Order);
+		}
 	}
 
 	//Encodes a single trace, forcibly.
@@ -261,7 +308,7 @@ public:
 	}
 
 	//Gets the current treetop at the given index.
-	c_Node* get_Treetop(int p_Index)
+	c_Node* get_Treetop(int p_Index = -1)
 	{
 		//For this network the treetop is the scaffold[1][0] since all lower nodes link to this higher tier node.
 		return Scaffold[1][0];

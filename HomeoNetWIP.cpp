@@ -18,6 +18,14 @@ public:
     //We've flattened the lowest tiers, instead of raw constructs being built into a multi-sensory-construct (MSC) we instead directly encode all the raw into an MSC through a many-to-one CAN scaffold.
     NT4::c_CAN_Many_To_One Raw_MSC;
 
+    NT4::c_CAN_Many_To_One Raw_Concrete;
+    NT4::c_CAN_Many_To_One Raw_Granulated;
+    NT4::c_CAN_Many_To_One Raw_Delta;
+
+    NT4::c_CAN_Many_To_One Raw_Efferent;
+
+    NT4::c_CAN_Many_To_One Chrono;
+
     //The count.
     int Afferent_Count; //Variables dependent on this node: Afferent[]
     int Efferent_Count; //Variables dependent on this node: Efferent[]
@@ -27,12 +35,25 @@ public:
     c_Efferent_Input_Output** Efferent;
 
     //The array to hold the gathered input, and the count of elements in it.
-    uint64_t* Gathered_Afferent[3]; //[0]: Concrete, [1]: Granulated, [2]: Delta
+    uint64_t * Gathered_Afferent[3]; //[0]: Concrete, [1]: Granulated, [2]: Delta
     uint64_t * Gathered_Efferent; //This is separate because it can have a different depth than the afferent one.
+    uint64_t Gathered_Treetops[4]; //Each index corresponds to a construct respectively: [0] Concrete, [1] Granulated, [2] Delta, [3] Actuator/Efferent
+    
+    uint64_t * Gathered_Chrono; //Gathered Chrono is sized by the user so they can choose the depth.
+    int Chrono_Depth;
 
     c_Homeostasis_Module()
     {
+        Raw_Concrete.set_NNet(&Nodes);
+        Raw_Granulated.set_NNet(&Nodes);
+        Raw_Delta.set_NNet(&Nodes);
+
+        Raw_Efferent.set_NNet(&Nodes);
+
         Raw_MSC.set_NNet(&Nodes);
+        
+        Chrono.set_NNet(&Nodes);
+        
 
         Afferent_Count = 1;
         Efferent_Count = 1;
@@ -41,12 +62,30 @@ public:
         Efferent = new c_Efferent_Input_Output * [1]; Efferent[0] = new c_Efferent_Input_Output;
 
         //For afferent and efferent 1 each. The depth of this is based on (Afferent_Count + Efferent_Count)
-        Gathered_Afferent[0] = new uint64_t[1];
-        Gathered_Afferent[1] = new uint64_t[1];
-        Gathered_Afferent[2] = new uint64_t[1];
-        Gathered_Efferent = new uint64_t[1];
+        Gathered_Afferent[0] = new uint64_t[1]; Gathered_Afferent[0][0] = 0;
+        Gathered_Afferent[1] = new uint64_t[1]; Gathered_Afferent[1][0] = 0;
+        Gathered_Afferent[2] = new uint64_t[1]; Gathered_Afferent[2][0] = 0;
+        Gathered_Efferent = new uint64_t[1]; Gathered_Efferent[0] = 0;
+
+        Gathered_Treetops[0] = 0;
+        Gathered_Treetops[1] = 0;
+        Gathered_Treetops[2] = 0;
+        Gathered_Treetops[3] = 0;
+
+        Chrono_Depth = 1;
+        Gathered_Chrono = new uint64_t[1]; Gathered_Chrono[0] = 0;
 
         std::cout << "\n A: " << Afferent_Count << " E: " << Efferent_Count;
+    }
+
+    //Sets the Chrono depth.
+    void set_Chrono_Depth(int p_Depth)
+    {
+        if (Gathered_Chrono != NULL) { delete[] Gathered_Chrono; Gathered_Chrono = NULL; }
+
+        Chrono_Depth = p_Depth;
+
+        Gathered_Chrono = new uint64_t[Chrono_Depth];
     }
 
     //Register Afferent input. The module always starts with 1.
@@ -162,6 +201,16 @@ public:
         Efferent[p_Index]->set_Value(p_Value);
     }
 
+    //Shifts the chrono.
+    void shift_Chrono()
+    {
+        for (int cou_C = 0; cou_C < (Chrono_Depth - 1); cou_C++)
+        {
+            Gathered_Chrono[cou_C] = Gathered_Chrono[cou_C + 1];
+        }
+        Gathered_Chrono[Chrono_Depth - 1] = 0;
+    }
+
     //Exposes the set_Value() so the user can access it through a function.
     void shift_Data()
     {
@@ -174,6 +223,8 @@ public:
         {
             Efferent[cou_E]->shift_Data();
         }
+
+        shift_Chrono();
     }
 
     //This is done whenever an afferent or efferent is registered.
@@ -194,6 +245,9 @@ public:
             Gathered_Afferent[0][cou_Index] = 0;
             Gathered_Afferent[1][cou_Index] = 0;
             Gathered_Afferent[2][cou_Index] = 0;
+        }
+        for (int cou_Index = 0; cou_Index < Efferent_Count; cou_Index++)
+        {
             Gathered_Efferent[cou_Index] = 0;
         }
     }
@@ -201,29 +255,84 @@ public:
     //Gathers the input set.
     void gather_Input()
     {
+        std::cout << "\n\n gather_Input()";
         for (int cou_Index = 0; cou_Index < Afferent_Count; cou_Index++)
         {
-            Gathered_Afferent[0][cou_Index] = Afferent[cou_Index]->get_Value_Data();
-            Gathered_Afferent[1][cou_Index] = Afferent[cou_Index]->get_Value_Granulated();
-            Gathered_Afferent[2][cou_Index] = Afferent[cou_Index]->get_Value_Delta();
+            Gathered_Afferent[0][cou_Index] = Afferent[cou_Index]->get_Value_Data_uint64_t();
+            Gathered_Afferent[1][cou_Index] = Afferent[cou_Index]->get_Value_Granulated_uint64_t();
+            Gathered_Afferent[2][cou_Index] = Afferent[cou_Index]->get_Value_Delta_uint64_t();
+
+            std::cout << "\n   a-[" << cou_Index << "]: C: " << Gathered_Afferent[0][cou_Index] << " G: " << Gathered_Afferent[1][cou_Index] << " D: " << Gathered_Afferent[2][cou_Index];
         }
-        for (int cou_Index = 0; cou_Index < Afferent_Count; cou_Index++)
+        std::cout << "\n";
+        for (int cou_Index = 0; cou_Index < Efferent_Count; cou_Index++)
         {
-            Gathered_Efferent[cou_Index] = Efferent[cou_Index]->get_Value_Data();
+            Gathered_Efferent[cou_Index] = Efferent[cou_Index]->get_Value_Data_uint64_t();
+
+            std::cout << "   e-[" << cou_Index << "]: V: " << Gathered_Efferent[cou_Index];
         } 
+    }
+
+    //Gathers the treetops from the Raw tier constructs
+    void gather_Raw_Treetops()
+    {
+        Gathered_Treetops[0] = (Raw_Concrete.get_Treetop())->NID;
+        Gathered_Treetops[1] = (Raw_Granulated.get_Treetop())->NID;
+        Gathered_Treetops[2] = (Raw_Delta.get_Treetop())->NID;
+
+        Gathered_Treetops[3] = (Raw_Efferent.get_Treetop())->NID;
+    }
+
+    //Gathers the Chrono, assumes the array is shifted.
+    void gather_Chrono()
+    {
+        Gathered_Chrono[Chrono_Depth - 1] = (Raw_MSC.get_Treetop())->NID;
+    }
+
+    //First we do the lower ones, then from those we gather the treetops to bind together into the MSC, which then feeds into the Chrono.
+    void encode_Arrays()
+    {
+        //Lower Raw Constructs.
+        Raw_Concrete.encode(Gathered_Afferent[0], Afferent_Count);
+        Raw_Granulated.encode(Gathered_Afferent[1], Afferent_Count);
+        Raw_Delta.encode(Gathered_Afferent[2], Afferent_Count);
+
+        Raw_Efferent.encode(Gathered_Efferent, Efferent_Count);
+
+        //Now gather the treetops.
+        gather_Raw_Treetops();
+
+        //And encode those treetops into the Chrono after Chrono has been shifted.
+        Raw_MSC.encode(Gathered_Treetops, 4);
+
+        std::cout << "\n Raw_MSC:\n";
+        Raw_MSC.output_Input();
+        Raw_MSC.output_Scaffold();
+        Raw_MSC.output_Scaffold_Char();
+
+        gather_Chrono();
+
+        Chrono.encode(Gathered_Chrono, Chrono_Depth);
+
+        std::cout << "\n Chrono:\n";
+        Chrono.output_Input();
+        Chrono.output_Scaffold();
+        Chrono.output_Scaffold_Char();
     }
 
     //Encodes an input set.
     void encode()
     {
+        resize_Gathered_Input();
+
         //Gather the Input set
         gather_Input();
 
         //Outputs the gathered Inputs
-        void output_Gathered();
+        output_Gathered();
 
         //Encodes the Input.
-        //Raw_MSC.encode(Gathered_Input, (Afferent_Count + Efferent_Count));
+        encode_Arrays();
     }
 
     //Exposes the output_IO() so the user can access it through a function.
@@ -250,13 +359,20 @@ public:
         for (int cou_Index = 0; cou_Index < Afferent_Count; cou_Index++)
         {
             std::cout << "\n [0] " << Gathered_Afferent[0][cou_Index];
-            std::cout << "\n [1] " << Gathered_Afferent[1][cou_Index];
-            std::cout << "\n [2] " << Gathered_Afferent[2][cou_Index];
+            std::cout << " [1] " << Gathered_Afferent[1][cou_Index];
+            std::cout << " [2] " << Gathered_Afferent[2][cou_Index];
         }
+        std::cout << "\n";
         for (int cou_Index = 0; cou_Index < Efferent_Count; cou_Index++)
         {
-            std::cout << "\n E " << Gathered_Efferent[cou_Index];
+            std::cout << " {[" << cou_Index << "] " << Gathered_Efferent[cou_Index] << " } ";
         }
+    }
+
+    //Outputs the neural network.
+    void output_NNet()
+    {
+        Nodes.output_BP();
     }
 };
 
@@ -363,6 +479,7 @@ int main()
 
 
     ProtoGaia.set_Depth(6);
+    ProtoGaia.set_Chrono_Depth(5);
 
 
     for (int cou_Index = 0; cou_Index < 6; cou_Index++)
@@ -374,7 +491,7 @@ int main()
         ProtoGaia.add_Afferent_Granulation(0, 100, cou_Index);
     }
 
-    for (int cou_Index = 0; cou_Index < 25; cou_Index++)
+    for (int cou_Index = 0; cou_Index < 5; cou_Index++)
     {
         ProtoGaia.shift_Data();
 
@@ -385,15 +502,78 @@ int main()
         ProtoGaia.set_Afferent_Value(4, (rand() % 100));
         ProtoGaia.set_Afferent_Value(5, (rand() % 100));
 
-        ProtoGaia.set_Efferent_Value(0, (cou_Index + cou_Index));
-        ProtoGaia.set_Efferent_Value(1, (cou_Index + cou_Index));
-        ProtoGaia.set_Efferent_Value(2, (cou_Index + cou_Index));
-        ProtoGaia.set_Efferent_Value(3, (cou_Index + cou_Index));
-        ProtoGaia.set_Efferent_Value(4, (cou_Index + cou_Index));
-        ProtoGaia.set_Efferent_Value(5, (cou_Index + cou_Index));
+        ProtoGaia.set_Efferent_Value(0, (cou_Index + cou_Index + 0));
+        ProtoGaia.set_Efferent_Value(1, (cou_Index + cou_Index + 1));
+        ProtoGaia.set_Efferent_Value(2, (cou_Index + cou_Index + 2));
+        ProtoGaia.set_Efferent_Value(3, (cou_Index + cou_Index + 3));
+        ProtoGaia.set_Efferent_Value(4, (cou_Index + cou_Index + 4));
+        ProtoGaia.set_Efferent_Value(5, (cou_Index + cou_Index + 5));
 
         ProtoGaia.output_AE();
     }
 
+    for (int cou_Index = 0; cou_Index < 10; cou_Index++)
+    {
+        ProtoGaia.shift_Data();
 
+        ProtoGaia.set_Afferent_Value(0, (cou_Index + cou_Index));
+        ProtoGaia.set_Afferent_Value(1, (rand() % 100));
+        ProtoGaia.set_Afferent_Value(2, (rand() % 100));
+        ProtoGaia.set_Afferent_Value(3, (rand() % 100));
+        ProtoGaia.set_Afferent_Value(4, (rand() % 100));
+        ProtoGaia.set_Afferent_Value(5, (rand() % 100));
+
+        ProtoGaia.set_Efferent_Value(0, (rand() % 3));
+        ProtoGaia.set_Efferent_Value(1, (rand() % 3));
+        ProtoGaia.set_Efferent_Value(2, (rand() % 3));
+        ProtoGaia.set_Efferent_Value(3, (rand() % 3));
+        ProtoGaia.set_Efferent_Value(4, (rand() % 3));
+        ProtoGaia.set_Efferent_Value(5, (rand() % 3));
+
+        ProtoGaia.encode();
+        ProtoGaia.output_AE();
+    }
+
+    ProtoGaia.output_NNet();
+
+    NT4::c_CAN_Many_To_One* tmp_CAN;
+
+    tmp_CAN = &(ProtoGaia.Raw_Concrete);
+     
+    NT4::c_Charging_Buffer tmp_Buffman;
+
+    tmp_Buffman.Input_Position = 0;
+
+    tmp_Buffman.charge_Outputs();
+
+    for (int cou_Index = 0; cou_Index < tmp_CAN->Input_Depth; cou_Index++)
+    {
+        std::cout << "\n\n Charging Node: CAN[0][" << cou_Index << "]: " << tmp_CAN->Scaffold[0][cou_Index];
+        if (tmp_CAN->Scaffold[0][cou_Index] != NULL)
+        {
+            tmp_Buffman.submit(tmp_CAN->Scaffold[0][cou_Index], (1.0));
+
+            tmp_Buffman.output_All_Buffers();
+        }
+    }
+
+    tmp_Buffman.gather();
+
+
+    while (tmp_Buffman.flg_Not_Done)
+    {
+        std::cout << "\n\n flg_Not_Done\n";
+        tmp_Buffman.charge_Outputs();
+
+        tmp_Buffman.gather();
+
+        tmp_Buffman.output_All_Buffers();
+    }
+
+    std::cout << "\n\n Completed:\n";
+
+    tmp_Buffman.output_All_Buffers();
+
+    std::cout << "\n\n Treetops:\n";
+    tmp_Buffman.output_Treetops();
 }

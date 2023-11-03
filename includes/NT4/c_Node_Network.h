@@ -128,7 +128,7 @@ public:
 
 	//Creates a new node, then adds it to the state tree.
 	//Assumes the construct is already registered so the index is valid.
-	c_Node* new_State_Node(int p_Construct, uint64_t p_State)
+	c_Node* new_State_Node(int p_Construct, double p_State)
 	{
 		c_Node* tmp_State_Node = new_Node();
 
@@ -137,6 +137,8 @@ public:
 
 		//Assign the newly minted node in the fractal state tree.
 		State_Nodes[p_Construct]->set_Current_Node_NAdd(tmp_State_Node);
+
+		tmp_State_Node->State = p_State;
 
 		return tmp_State_Node;
 	}
@@ -147,10 +149,9 @@ public:
 	{
 		p_To->set_Dendrites(p_From, p_Count);
 
-		p_From[0]->add_Axon_F(p_To);
-		for (int cou_Index = 1; cou_Index < p_Count; cou_Index++)
+		for (int cou_Index = 0; cou_Index < p_Count; cou_Index++)
 		{
-			p_From[cou_Index]->add_Axon(p_To);
+			p_From[cou_Index]->add_Axon_Index(p_To, cou_Index);
 		}
 	}
 
@@ -173,23 +174,25 @@ public:
 		//See if the node exists yet.
 		tmp_Node = does_Upper_Tier_Connection_Exist(p_Legs, p_Count);
 
+		/*
 		std::cout << "\n DUTCE: " << tmp_Node;
 		for (int cou_Leg = 0; cou_Leg < p_Count; cou_Leg++)
 		{
 			std::cout << "\n    [" << cou_Leg << "] " << p_Legs[cou_Leg];
 		}
+		*/
 
 		//If the node doesn't exist then we create it, and then create the connection.
 		if (tmp_Node == NULL)
 		{
-			std::cout << "\n  New Node";
+			//std::cout << "\n  New Node";
 
 			tmp_Node = new_Node();
 
 			create_Connections(tmp_Node, p_Legs, p_Count);
 		}
 
-		std::cout << "\n  End: " << tmp_Node;
+		//std::cout << "\n  End: " << tmp_Node;
 		return tmp_Node;
 	}
 
@@ -219,5 +222,31 @@ public:
 
 		//Create the new node and return it, new_State_Node handles the binding.
 		return new_State_Node(p_Index, p_Data);
+	}
+
+	//Iterates through every node and outputs their bp_O()
+	void output_BP()
+	{
+		c_Node* tmp_Node;
+		tmp_Node = Root;
+
+		union u_Tmp
+		{
+			double D;
+			uint64_t U;
+		};
+
+		u_Tmp tmp_State; tmp_State.U = 0;
+
+		while (tmp_Node != NULL)
+		{
+			std::cout << "\nNode (" << tmp_Node->NID << ") ";
+			std::cout << " type {(" << int(tmp_Node->Type) << ")} ";
+			tmp_State.U = tmp_Node->State;
+			std::cout << "~~~~U~: " << tmp_State.D << "    ";
+			tmp_Node->bp_O();
+
+			tmp_Node = tmp_Node->Next;
+		}
 	}
 };

@@ -43,9 +43,9 @@ public:
 
 		if (Top != NULL)
 		{
-			delete[] Top;
-			delete[] Bottom;
-			delete[] Mid;
+			delete[] Top; Top = NULL;
+			delete[] Bottom; Bottom = NULL;
+			delete[] Mid; Mid = NULL;
 		}
 
 		Top = new double[Count + 1];
@@ -63,9 +63,9 @@ public:
 		Bottom[Count] = p_Bottom;
 		Mid[Count] = ((p_Top - p_Bottom) / 2) + p_Bottom;
 
-		delete [] tmp_Top;
-		delete [] tmp_Bottom;
-		delete [] tmp_Mid;
+		if (tmp_Top != NULL) { delete[] tmp_Top; tmp_Top = NULL; }
+		if (tmp_Bottom != NULL) { delete[] tmp_Bottom; }
+		if (tmp_Mid != NULL) { delete[] tmp_Mid; }
 
 		Count++;
 	}

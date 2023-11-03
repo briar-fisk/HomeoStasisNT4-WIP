@@ -160,3 +160,90 @@ Sun 10/22/2023 22:30:26.83:
 
 Thu 10/26/2023  1:34:54.23:
    output_Gathered() added. Gets the current input set as 2 arrays, Afferent is 2d, efferent 1d
+
+Thu 10/26/2023 22:56:21.92:
+   Added the Many to one CANs in c_Homeostasis_Module, Raw_Concrete (can be left out), Raw_Granulated, Raw_Delta, and Raw_Efferent.
+
+Fri 10/27/2023 22:48:00.56:
+   For the Gaia module I need to finish hooking it up to the NNets, encoding, charging, gathering traces, sorting traces, trace synthesis and testing, and output to the efferent. In trace synthesis and testing we will be making use of the prediction capabilities to test each trace for error reduction.
+
+Fri 10/27/2023 23:39:01.30:
+   Alright alright, got the gathered inputs setup finally, forgot to resize_Gathered_Input() and had a buffer overrun, dumb error but it is fixed now.
+
+Fri 10/27/2023 23:40:26.12:
+   NNets now encode! w00t w00t! Time to get the MSC, then the Chrono hooked up
+
+Fri 10/27/2023 23:41:47.76:
+   Nvm, I was already gathering the raw treetops, so MSC is encoding as well atm.
+
+Fri 10/27/2023 23:54:16.69:
+   Chrono encoding works now.
+
+Sun 10/29/2023 17:16:14.39:
+   Did a redesign on the c_Node so that axons are stored in one array sub-divided by the index of the denrite they connect too. Where before _F mean the first, now it is index [0] representing 'axon hillock' 0. This is so that during charging we can specify which legs to fire upon which is essential for the temporal searching in chronological networks where we use left and right leg charging to search forward and backwards in the time series encodings.
+
+Sun 10/29/2023 18:32:38.44:
+   So here's what I'm thinking, we move the leg charging flags to a referenced object from the node to the CAN structure. This allows us to register and control leg behavior through the CAN structure. Then we can allow the charging buffers to run after requesting the CAN structures update and collect the treetops from the end. If we backpropagated out the trace then we could output the patterns of quanta as they cascade out. There would be many of the same trace but it would just add more detail and it looks cooler.
+
+Sun 10/29/2023 18:35:56.30:
+   The only problem with this is that it implements a bias that is mutually exclusive in that only one node can be linked to one CAN meaning it excludes and other structures from sharing the nodes, like a spacial dimension. You can still build structures on top of the same input set but you need to separate them if you want different charging schemas.
+
+Sun 10/29/2023 18:38:21.56:
+   I just realized I need to change the MT1 so that it loads in the lower construct nodes on the state node tier. Otherwise the data has a rupture between lower and higher constructs and the charging buffers will break on it when they roll that high.
+
+Sun 10/29/2023 18:46:52.80:
+   set_Leg_Count and set_Leg_Firing_Order added to the base class for CAN structures.
+
+Mon 10/30/2023 18:09:14.89:
+   Hmm, so for the problem of making multi-sensory constructs but allowing different CAN structures we have to address the input tier problem, mainly that right now each CAN has an input set that only accepts states. I'm thinking if we add another array dictating 'type' of input then we could easily integrate node replacement instead of state linking allowing us to read in treetops directly. An extra array that says if it is a state input or node input.
+
+Mon 10/30/2023 18:19:12.87:
+   So after some paper exploration I found that the backpropagation algorithm breaks down with a state tier connecting directly to treetops below. The solution I believe is to attach types to the nodes so we know which is state, memory, and treetop. Possibly use parallel trees in the Node_Network, or give each node a value to hold detailing the node type. Adding the trees is the likely route as each I think assigning a value to each node may be the way to go. The biggest benefit of the tree is that it would be nice to have an easy handle on each node type if you ever wanted to look them up.
+
+Mon 10/30/2023 19:29:56.79:
+   I am reusing the old charging buffer. Removing charge_spike for now. 
+
+Mon 10/30/2023 19:32:18.71:
+   Instead of Left/Right inside of the charging buffer we now iterate through each axon hillock. I think I should call them processess but idk, been awhile since I've looked at the biological morphologies they were modeled on.
+
+Mon 10/30/2023 19:34:40.69:
+   Thinking of wrapping the Charging_Buffer and a CAN structure on the same level in the construct class to flatten what the user sees.
+
+Mon 10/30/2023 19:36:21.60:
+   Removed RC charging from the charging buffer. It will be added back but likely very differently.
+
+Mon 10/30/2023 20:04:02.76:
+   Altered the types, 0 is now NULL and the rest are 1-state, 2-branch, 3-treetop, 4-state-treetop
+
+Mon 10/30/2023 20:16:43.04:
+   Added output_BP to the module which gives surface access to the nodes output which I just added called output_BP which iteratively goes through the linked list of nodes and outputs the bp_O() on them with the new type checking for proper discharging to handle the issue of treetops as intputs from discrete lower tier constructs.
+
+Mon 10/30/2023 22:25:21.11:
+   Converted all internal states to double throughout, will template it later when I have the internet to look up the syntax again.
+
+Mon 10/30/2023 22:49:21.48:
+   So for now I'm going to make a union for the interface and change everything internally back to uint64_t
+
+Tue 10/31/2023 10:39:13.69:
+   If everything interally is uint64_t or some other common type I can keep the union limited to just the AE interface and use explicitly named members to get and set desired values. Avoid the mess that happened in NT3 with u_DATA_3.
+
+Tue 10/31/2023 10:47:42.86:
+   set_voidstar lol
+
+Tue 10/31/2023 10:50:12.88:
+   Adding the u_Data and a wrapper class to c_AE_Interface that will handle the unionized data (self propagating organizations are THE DEVIL) so that when the user calls set_double, set_uint64_t, etc it will set the type appropriately. Although, if I'm using explicit get and set for datatype I don't need the type var as that will be up to the user when they call get_uint64_t or whatever.
+
+Wed 11/01/2023  5:13:01.49:
+   uint64_t internally is ugly for debugging but works. I had an issue last time with the union and trying to account for all the datatypes it handled. I will likely make a base class, possibly polymorphic, for the node. 
+
+Wed 11/01/2023  5:14:25.57:
+   Stealing the charge_Buffer_C from c_NT3_Construct_1D as I didn't feel like rewriting the logic to charge it properly. To use it you do .charge_Outputs() .submit() .gather() while(!Done)
+
+Wed 11/01/2023  5:27:52.22:
+   Forgot to initialize the leg firing order to true. Charging buffers not firing correctly atm.
+
+Wed 11/01/2023  6:05:36.46:
+   I had the modifier charge set to 0 in a dumb dumb move. It wouldn't charge because the chargesd were put on their knees and executed the moment they tried to excite a node.
+
+Wed 11/01/2023  6:17:38.24:
+   w00t w00t, looks like it is charging now! Still need to hand verify it, but so far much progress.

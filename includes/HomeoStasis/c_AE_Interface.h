@@ -1,3 +1,41 @@
+//This is used to easily handle the conversions between types without losing data.
+//There is likely a better way but this is quick n easy and can be changed later.
+union u_Data
+{
+    uint64_t U;
+    double D;
+    void* V;
+};
+
+class c_Data
+{
+public:
+    u_Data Union;
+
+    c_Data()
+    {
+        Union.V = NULL;
+    }
+
+    void set_uint64_t(uint64_t p_Data)
+    {
+        Union.U = p_Data;
+    }
+
+    void set_double(double p_Data)
+    {
+        Union.D = p_Data;
+    }
+
+    void set_voidstar(void * p_Data)
+    {
+        Union.V = p_Data;
+    }
+
+    uint64_t get_uint64_t() { return Union.U; }
+    double get_double() { return Union.D; }
+    void* get_voidstar() { return Union.V; }
+};
 
 //This class serves as the user interface for the goal input
 //It encapsulates the concrete data, granulated data, and delta.
@@ -11,11 +49,11 @@ public:
     c_Granulator Granulator;
 
     //Concrete data is stored internally as an array of double.
-    double * Data;
+    c_Data* Data;
 
     //Granulated Data & Deltas are stored here at the same depth os the Data.
-    double* Granulated;
-    double* Delta;
+    c_Data* Granulated;
+    c_Data* Delta;
 
     //The depth of the data.
     int Depth;
@@ -46,9 +84,9 @@ public:
 
         Depth = p_Depth;
 
-        Data = new double[Depth];
-        Granulated = new double[Depth];
-        Delta = new double[Depth];
+        Data = new c_Data[Depth];
+        Granulated = new c_Data[Depth];
+        Delta = new c_Data[Depth];
 
         wipe_Data();
     }
@@ -59,9 +97,9 @@ public:
     {
         for (int cou_Index = 0; cou_Index < Depth; cou_Index++)
         {
-            Data[cou_Index] = 0.0f;
-            Granulated[cou_Index] = 0.0f;
-            Delta[cou_Index] = 0.0f;
+            Data[cou_Index].set_voidstar(NULL);
+            Granulated[cou_Index].set_voidstar(NULL);
+            Delta[cou_Index].set_voidstar(NULL);
         }
     }
 
@@ -83,9 +121,9 @@ public:
             p_Index = Depth - 1;
         }
 
-        if (Data[Depth - 1] < Data[Depth - 2]) { Delta[Depth - 1] = -1; }
-        if (Data[Depth - 1] == Data[Depth - 2]) { Delta[Depth - 1] = 0; }
-        if (Data[Depth - 1] > Data[Depth - 2]) { Delta[Depth - 1] = 1; }
+        if (Data[Depth - 1].get_double() < Data[Depth - 2].get_double()) { Delta[Depth - 1].set_double(-1); }
+        if (Data[Depth - 1].get_double() == Data[Depth - 2].get_double()) { Delta[Depth - 1].set_double(0); }
+        if (Data[Depth - 1].get_double() > Data[Depth - 2].get_double()) { Delta[Depth - 1].set_double(1); }
     }
 
     //Accepts an input and updates the correct index with it, then granulates it, then deltatizes it.
@@ -97,13 +135,13 @@ public:
         }
 
         //First get the concrete value.
-        Data[p_Index] = p_Value;
+        Data[p_Index].set_double(p_Value);
 
         //Then the granulated value.
-        Granulated[p_Index] = Granulator.get_Granulated(p_Value);
+        Granulated[p_Index].set_double(Granulator.get_Granulated(p_Value));
 
         //The the delta.
-        calculate_Delta();
+        calculate_Delta(p_Index);
     }
 
     //Returns the value.
@@ -114,7 +152,7 @@ public:
             p_Index = Depth - 1;
         }
     
-        return Data[p_Index];
+        return Data[p_Index].get_double();
     }
 
     //Returns the value.
@@ -125,7 +163,7 @@ public:
             p_Index = Depth - 1;
         }
     
-        return Granulated[p_Index];
+        return Granulated[p_Index].get_double();
     }
 
     //Returns the value.
@@ -136,7 +174,40 @@ public:
             p_Index = Depth - 1;
         }
     
-        return Delta[p_Index];
+        return Delta[p_Index].get_double();
+    }
+
+    //Returns the value.
+    double get_Value_Data_uint64_t(int p_Index = -1)
+    {
+        if (p_Index == -1)
+        {
+            p_Index = Depth - 1;
+        }
+    
+        return Data[p_Index].get_uint64_t();
+    }
+
+    //Returns the value.
+    double get_Value_Granulated_uint64_t(int p_Index = -1)
+    {
+        if (p_Index == -1)
+        {
+            p_Index = Depth - 1;
+        }
+    
+        return Granulated[p_Index].get_uint64_t();
+    }
+
+    //Returns the value.
+    double get_Value_Delta_uint64_t(int p_Index = -1)
+    {
+        if (p_Index == -1)
+        {
+            p_Index = Depth - 1;
+        }
+    
+        return Delta[p_Index].get_uint64_t();
     }
 
     //This shifts the output from current to 0.
@@ -151,9 +222,9 @@ public:
         }
 
         //Set the current to 0.0 in preparation for input.
-        Data[Depth - 1] = 0.0f;
-        Granulated[Depth - 1] = 0.0f;
-        Delta[Depth - 1] = 0.0f;
+        Data[Depth - 1].set_double(0.0f);
+        Granulated[Depth - 1].set_double(0.0f);
+        Delta[Depth - 1].set_double(0.0f);
     }
 
     //Outputs the data
@@ -161,7 +232,7 @@ public:
     {
         for (int cou_Index = 0; cou_Index < Depth; cou_Index++)
         {
-            std::cout << "\n[" << cou_Index <<"] Data: " << Data[cou_Index] << " << Granulated: " << Granulated[cou_Index] << " << Delta: " << Delta[cou_Index];
+            std::cout << "\n[" << cou_Index << "] Data: " << Data[cou_Index].get_double() << " << Granulated: " << Granulated[cou_Index].get_double() << " << Delta: " << Delta[cou_Index].get_double();
         }
     }
 };
@@ -174,7 +245,7 @@ class c_Efferent_Input_Output
 public:
 
     //Concrete data is stored internally as an array of double.
-    double* Data;
+    c_Data* Data;
 
     //The depth of the data.
     int Depth;
@@ -197,7 +268,7 @@ public:
 
         Depth = p_Depth;
 
-        Data = new double[Depth];
+        Data = new c_Data[Depth];
 
         wipe_Data();
     }
@@ -208,7 +279,7 @@ public:
     {
         for (int cou_Index = 0; cou_Index < Depth; cou_Index++)
         {
-            Data[cou_Index] = 0.0f;
+            Data[cou_Index].set_voidstar(NULL);
         }
     }
 
@@ -221,7 +292,7 @@ public:
         }
 
         //First get the concrete value.
-        Data[p_Index] = p_Value;
+        Data[p_Index].set_double(p_Value);
     }
 
     //Returns the value.
@@ -232,7 +303,18 @@ public:
             p_Index = Depth - 1;
         }
 
-        return Data[p_Index];
+        return Data[p_Index].get_double();
+    }
+
+    //Returns the value.
+    double get_Value_Data_uint64_t(int p_Index = -1)
+    {
+        if (p_Index == -1)
+        {
+            p_Index = Depth - 1;
+        }
+
+        return Data[p_Index].get_uint64_t();
     }
 
     //This shifts the output from current to 0.
@@ -245,7 +327,7 @@ public:
         }
 
         //Set the current to 0.0 in preparation for input.
-        Data[Depth - 1] = 0.0f;
+        Data[Depth - 1].set_double(0.0f);
     }
 
     //Outputs the data
@@ -253,7 +335,7 @@ public:
     {
         for (int cou_Index = 0; cou_Index < Depth; cou_Index++)
         {
-            std::cout << "\n[" << cou_Index << "] Data: " << Data[cou_Index];
+            std::cout << "\n[" << cou_Index << "] Data: " << Data[cou_Index].get_double();
         }
     }
 };
