@@ -1,100 +1,62 @@
-# Homeostasis Module with Distributed Symbol Networks
-
-![GitHub](https://img.shields.io/github/license/your/repository)
-
-This development repository hosts a homeostasis module designed to mimic biological systems, utilizing the Distributed Symbol Networks neural architecture. Please note that this is a work in progress and intended for sharing with your development team. The complete implementation will follow once the module is thoroughly designed and coded from scratch to ensure it meets the desired quality and functionality standards.
+# Gaia OS for Arcology Homeostasis
 
 ## Overview
 
-The homeostasis module operates as a black box, functioning above the data to regulate and maintain system stability. It utilizes the Distributed Symbol Networks neural architecture, providing a framework for maintaining homeostasis in a variety of systems, with a focus on goal states and feedback mechanisms.
+The Gaia OS is a crucial component of the Arcology's intelligent control system, designed to maintain homeostasis within the complex environment of the arcology. Serving as the brain of the system, this module utilizes sensory data, memory, and predictive analysis to make informed decisions for the optimal functioning of the arcology.
 
-## Getting Started
+## Table of Contents
 
-Here's how you can set up and use the homeostasis module:
+- [Introduction](#introduction)
+- [Setup](#setup)
+- [Operation](#operation)
+- [Environmental Model](#environmental-model)
+- [Decision-Making Process](#decision-making-process)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
 
-1. **Declaration**: Declare the homeostasis module object:
+## Introduction
 
-    ```cpp
-    c_Homeostasis testerman;
-    ```
+The Gaia OS is inspired by the concept of Gaia, the Earth as a living, self-regulating organism. It plays a vital role in the arcology by perceiving environmental data, learning from past experiences, and dynamically adjusting controls to maintain a balanced and optimal state.
 
-2. **Register Goal States**: Register the goal states you want the module to maintain. You can register multiple goal states, but for demonstration purposes, we'll register two:
+## Setup
 
-    ```cpp
-    testerman.register_Goal_States(2);
-    ```
+### 1. Initial Setup - Awakening
 
-3. **Name Goal States**: Give meaningful names to the goal states:
+The Gaia OS goes through an initialization process to set up its sensory inputs, memory, and goal states. This includes registering sensors, defining optimal goal states (Homeostasis_Set), and configuring short-term memory parameters.
 
-    ```cpp
-    testerman.rename_Goal_State(0, "O2");
-    testerman.rename_Goal_State(1, "Temperature");
-    ```
+### 2. Loop while 'Awake'
 
-4. **Set Goal State Data Types**: Define the data type for each goal state (0 for int, 1 for float):
+The module operates in a loop, continuously adapting to changing conditions. This loop involves receiving sensory data, storing it in memory, categorizing information, calculating directional changes, and incrementing data. The system then utilizes symbolic and temporal machine learning analysis to make predictions about the current situation.
 
-    ```cpp
-    testerman.set_Goal_State_Type(0, 1); // O2 as float
-    testerman.set_Goal_State_Type(1, 1); // Temperature as float
-    ```
+## Environmental Model
 
-5. **Register Feedback States**: Register the feedback states relevant to your dataset:
+To provide a consistent framework for understanding the arcology's dynamics, the Gaia OS specifies the variables, environment, sensors, and actuators. This includes defining behaviors for each component, such as the decrease in temperature and oxygen levels over iterations, and the actions of actuators like the Oxygen Pump and Heater.
 
-    ```cpp
-    testerman.register_Feedback_States(2);
-    ```
+## Decision-Making Process
 
-6. **Name Feedback States**: Assign meaningful names to the feedback states:
+1. **Deviation Recognition:**
+   - Gaia compares the current prediction with the optimal goal states to identify deviations, recognizing potential issues in the system.
 
-    ```cpp
-    testerman.rename_Feedback_State(0, "Heater");
-    testerman.rename_Feedback_State(1, "Oxygen_Pump");
-    ```
+2. **Memory Search:**
+   - Leveraging its photographic memory, Gaia searches for similar past situations to inform its decision-making process.
 
-7. **Set Feedback State Data Types**: Define the data type for each feedback state (0 for int, 1 for float):
+3. **Selection of Suitable Traces:**
+   - Gaia evaluates past responses and selects the most effective traces for addressing the current situation.
 
-    ```cpp
-    testerman.set_Feedback_State_Type(0, 1); // Heater as float
-    testerman.set_Feedback_State_Type(1, 1); // Oxygen_Pump as float
-    ```
+4. **Thorough Evaluation:**
+   - The module reviews deviations, recalling instances where values moved towards the goal, creating sets for forward and backward analysis.
 
-## Usage Example
+5. **Actuator Output Synthesis:**
+   - Gaia synthesizes outputs, updating current actuators based on effective memories while considering potential impacts on the system.
 
-Here's an example of using the module, which currently reads data into the afferent interface and calculates deltas for goal states:
+6. **System Output Update:**
+   - The synthesized outputs are used to update the current state of the system's actuators.
 
-```cpp
-// Read data into the afferent interface and calculate deltas for goal states
-testerman.Afferent_Goal_State.set_float(0, 0, float(Simboi.O2));
-testerman.Afferent_Goal_State.set_float(1, 0, float(Simboi.Temp));
-testerman.Afferent_Feedback_State.set_float(0, 0, float(Simboi.O2_Pump));
-testerman.Afferent_Feedback_State.set_float(1, 0, float(Simboi.Heater));
-testerman.update(); // Update the homeostasis module
-```
+## Usage
 
-## `update` Function
-
-The `update` function within the homeostasis module performs several essential steps:
-
-- **Calculate Delta**: Calculate delta values for goal states.
-- **Prepare Networks**: Clear existing networks and prepare for new input.
-- **Read Data Into Networks**: Read data into the afferent and delta interfaces.
-- **Build Raw Networks**: Construct raw networks at the lowest level.
-- **Read Raw Treetops Into MSC**: Read raw treetops into the MSC (Multi-Sensory-Construct) input.
-- **Build MSC**: Encode the MSC trace.
-- **Increment Chrono Array**: Increment the Chrono array for time tracking.
-- **Read Chrono Array Into Chrono**: Reset input, read in the current Chrono, and encode the Chrono trace.
-- Future development, including predictions and trace selection, will be added here.
+//To be written.
 
 ## License
 
-This project is licensed under public domain.
-
-## Contributing
-
-Briar Fisk
-
-## Contact
-
-For questions or suggestions, please contact Briar Fisk at briarfisk@gmail.com
-
----
+The Gaia OS is public domain.
