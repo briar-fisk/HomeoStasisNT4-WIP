@@ -1,61 +1,80 @@
-# Gaia OS for Arcology Homeostasis
+# Gaia Module with NT4 NeuralNet Engine
 
 ## Overview
 
-The Gaia OS is a crucial component of the Arcology's intelligent control system, designed to maintain homeostasis within the complex environment of the arcology. Serving as the brain of the system, this module utilizes sensory data, memory, and predictive analysis to make informed decisions for the optimal functioning of the arcology.
+The Gaia Module is an intelligent system designed for maintaining homeostasis within an arcology. Developed using the Quanta Based Hierarchically Organized Distributed Symbol Network (DSM) architecture, the Gaia Module leverages the power of the NT4 NeuralNet Engine for efficient processing and decision-making.
 
-## Table of Contents
+### Quanta Based Hierarchically Organized DSM Architecture
 
-- [Introduction](#introduction)
-- [Setup](#setup)
-- [Operation](#operation)
-- [Environmental Model](#environmental-model)
-- [Decision-Making Process](#decision-making-process)
-- [Usage](#usage)
-- [License](#license)
+The DSM architecture is a symbolic neural network that deviates from traditional connectivist numerical neural networks. It is inspired by the hierarchical organization of the mind in handling symbolic reasoning. Key components include Treetop Nodes representing complete encoded symbols, State Nodes holding the smallest sub-symbols, and a Current-Active-Node Scaffold facilitating transparent manipulation of encoded traces.
 
-## Introduction
+### NT4 NeuralNet Engine
 
-The Gaia OS is inspired by the concept of Gaia, the Earth as a living, self-regulating organism. It plays a vital role in the arcology by perceiving environmental data, learning from past experiences, and dynamically adjusting controls to maintain a balanced and optimal state.
+The Gaia Module relies on the NT4 NeuralNet Engine as its core machine learning engine. The NT4 engine is designed to implement the DSM architecture efficiently, providing the necessary tools for encoding and decoding patterns losslessly. The engine's deterministic hierarchical connections enable the representation of distributed symbols, allowing the Gaia Module to learn from past experiences and make informed decisions.
 
-## Setup
+## Functionality
 
-### 1. Initial Setup - Awakening
+### Initialization and Setup
 
-The Gaia OS goes through an initialization process to set up its sensory inputs, memory, and goal states. This includes registering sensors, defining optimal goal states (Homeostasis_Set), and configuring short-term memory parameters.
+1. **Awakening:**
+   - Gaia starts with no connected I/O, short-term memory, or goal states set.
+  
+2. **I/O Registration:**
+   - Sensors and actuators are registered, connecting Gaia to the arcology's environment.
 
-### 2. Loop while 'Awake'
+3. **Goal State Definition:**
+   - Optimal states for inputs (Homeostasis_Set) are defined, guiding Gaia in maintaining balance.
 
-The module operates in a loop, continuously adapting to changing conditions. This loop involves receiving sensory data, storing it in memory, categorizing information, calculating directional changes, and incrementing data. The system then utilizes symbolic and temporal machine learning analysis to make predictions about the current situation.
+4. **Memory Initialization:**
+   - Short-term memory is set up, determining the duration for retaining recent events.
 
-## Environmental Model
+### Operation Loop
 
-To provide a consistent framework for understanding the arcology's dynamics, the Gaia OS specifies the variables, environment, sensors, and actuators. This includes defining behaviors for each component, such as the decrease in temperature and oxygen levels over iterations, and the actions of actuators like the Oxygen Pump and Heater.
+1. **Input Reception - Sensory Perception:**
+   - Gaia receives information from sensors, analogous to human senses.
 
-## Decision-Making Process
+2. **Time Series Storage - Memory:**
+   - Extensive memory stores experiences and observations over time, akin to human memory.
 
-1. **Deviation Recognition:**
-   - Gaia compares the current prediction with the optimal goal states to identify deviations, recognizing potential issues in the system.
+3. **Granulation & Categorization:**
+   - Data complexity is reduced by categorizing information into larger granules, simplifying dataset processing.
 
-2. **Memory Search:**
-   - Leveraging its photographic memory, Gaia searches for similar past situations to inform its decision-making process.
+4. **Delta Direction Calculation:**
+   - Gaia calculates the direction of change by comparing current observations to the most recent ones.
 
-3. **Selection of Suitable Traces:**
-   - Gaia evaluates past responses and selects the most effective traces for addressing the current situation.
+5. **Incrementing Data:**
+   - Short-term memory is updated by bumping off the oldest observation, making room for the latest one.
 
-4. **Thorough Evaluation:**
-   - The module reviews deviations, recalling instances where values moved towards the goal, creating sets for forward and backward analysis.
+6. **Symbolic & Temporal ML Analysis:**
+   - Gaia analyzes past observations to make educated predictions about the current situation (Current_Prediction).
 
-5. **Actuator Output Synthesis:**
-   - Gaia synthesizes outputs, updating current actuators based on effective memories while considering potential impacts on the system.
+7. **Deviation Recognition:**
+   - Deviations from optimal states are recognized by comparing Current_Prediction to Homeostasis_Set.
 
-6. **System Output Update:**
-   - The synthesized outputs are used to update the current state of the system's actuators.
+8. **Memory Search:**
+   - Gaia searches its photographic memory for similar situations before identified deviations.
+
+9. **Selection of Suitable Traces:**
+   - Gaia selects traces from memory based on their effectiveness in similar situations, creating sets for working forwards and backwards.
+
+10. **Actuator Output Synthesis:**
+    - Gaia synthesizes outputs for actuators by evaluating memories and determining appropriate actions.
+
+11. **Iterative Process:**
+    - The entire process is iterative, allowing Gaia to continuously adapt to changing conditions within the arcology.
+
+### Evolutionary Design
+
+- The emergence of short-term memory was an unplanned feature that evolved during the design process, showcasing the system's adaptability and responsiveness to functional requirements.
 
 ## Usage
 
-//To be written.
+When the wrapper around the module is far enough this section will be filled out. Right now it is still a WIP on internal systems.
 
 ## License
 
-The Gaia OS is public domain.
+This project is public domain.
+
+## Contact
+
+For inquiries, please contact briarfisk@gmail.com.
