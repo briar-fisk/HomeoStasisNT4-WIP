@@ -12,7 +12,6 @@ The Gaia OS is a crucial component of the Arcology's intelligent control system,
 - [Environmental Model](#environmental-model)
 - [Decision-Making Process](#decision-making-process)
 - [Usage](#usage)
-- [Contributing](#contributing)
 - [License](#license)
 
 ## Introduction
